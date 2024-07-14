@@ -52,7 +52,7 @@ module sub( m1,m2,q,em, m_R, round);
         end
     end
     //assign m_R[24] = 1'b0;  //Aqui le doy 25 bits para no ajsutar la logica de los condicionales [0] no hay overflow virtual
-    assign m_R[24:0] = resta[30:6]; //Aqui le doy 25 bits para no ajsutar la logica de los condicionales
+    assign m_R[24:0] = resta[31:7]; //Aqui le doy 25 bits para no ajsutar la logica de los condicionales
     //Necesito logica para el redondeo por eso
     assign round = resta[5]; //Si el 5 bit es 1 se redondea: 
     
