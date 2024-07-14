@@ -64,8 +64,9 @@ module faddV(a,b,y);
         end
     end
     wire [24:0]m_R;
+    wire [7:0]exp_R;
     wire roundn;//Para ver si se usa el redondeo negativo
-    sub subtuki( .m1(m1),.m2(m2),.q(q),.em(em), .m_R(m_R), .round(roundn));
+    sub subtuki( .m1(m1),.m2(m2),.q(q),.em(em),.ee(ee),.e1(e1),.e2(e2), .m_R(m_R), .round(roundn), .exp_R(exp_R));
     
     //BIT PARA REDONDEO: 
     assign round = (se?mantisa_for_round[0]:roundn);
@@ -82,36 +83,61 @@ module faddV(a,b,y);
         end else begin
             mantisaS = m_R;  // signos diferentes
         end
-
-       
     end
-   
+    
+    //"Pequeño" bucle apra reducir la cantidad de ifs:
+    reg [7:0]exp;
+ 
+    always @* begin
+        if (em) //e1>e2
+            if (se)
+                exp = e1;
+            else // Caso de resta
+                exp = exp_R;
+                
+        else //e1<=e2
+        begin
+            if (ee) //e1 == e2
+                if (se)
+                    exp = e1+1;
+                else // Caso de resta
+                    exp = exp_R;
+            else //e1<e2
+                if (se)
+                    exp = e2;
+                else // Caso de resta
+                    exp = exp_R;
+        end
+    end
+    
+    
+    
     //Aqui lo redondeo
      always @* begin
         if (em) //e1>e2
             begin
                 if(!mantisaS[24])
-                    y = {s1, e1, round ? {mantisaS[22:0]+1'b1} : { mantisaS[22:0]}};
+                    y = {s1, exp, round ? {mantisaS[22:0]+1'b1} : { mantisaS[22:0]}};
                 else
-                    y = {s1, e1, round ? {mantisaS[23:1]+1'b1} : { mantisaS[23:1]}};
+                    y = {s1, exp, round ? {mantisaS[23:1]+1'b1} : { mantisaS[23:1]}};
             end 
         else //e1<=e2
         begin
             if (ee) //e1 == e2
                 begin
                     if(!mantisaS[24])
-                        y = {s1, e1+1, round ? {mantisaS[22:0]+1'b1} : { mantisaS[22:0]}};
+                        y = {s1, exp, round ? {mantisaS[22:0]+1'b1} : { mantisaS[22:0]}};
 
                     else
-                        y = {s1, e1 +1, round ? {mantisaS[23:1]+1'b1} : { mantisaS[23:1]}};
+                        y = {s1, exp, round ? {mantisaS[23:1]+1'b1} : { mantisaS[23:1]}};
 
                 end 
             else //e1<e2
                 begin
                     if(!mantisaS[24])
-                        y = {s2, e2, round ? {mantisaS[22:0]+1'b1} : { mantisaS[22:0]}};
+                        y = {s2, exp, round ? {mantisaS[22:0]+1'b1} : { mantisaS[22:0]}};
                     else
-                        y = {s2, e2, round ? {mantisaS[23:1]+1'b1}: { mantisaS[23:1]}};
+                        y = {s2, exp, round ? {mantisaS[23:1]+1'b1}: { mantisaS[23:1]}};
                 end 
                 
                

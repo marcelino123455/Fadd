@@ -1,13 +1,17 @@
 `timescale 1ns / 1ps
-
-
-module sub( m1,m2,q,em, m_R, round);
+module sub( m1,m2,q,em, ee, e1,e2, m_R, round, exp_R);
+    
+    
     
     input [22:0]m1;//mantisa sin bit implicito
     input [22:0]m2; //mantisa sin bit implicito
     
     input [7:0] q;//La cantidad q debo shiftear
+    input [7:0] e1;
+    input [7:0] e2;
+    output [7:0] exp_R;
     input em; //Si el exponente de m1 es mayor que el de m2
+    input ee; //Si los exponentes son iguales
     output [24:0]m_R;
     output round;
     
@@ -25,7 +29,7 @@ module sub( m1,m2,q,em, m_R, round);
     assign m2b[31]=1'b1;
     //Ya tengo las mantisas bonitas
     
-    //Ahira el shifteo: 
+    //Ahora el shifteo: 
     reg [31:0]shifted_m1b;
     reg [31:0]shifted_m2b;
     
@@ -46,15 +50,47 @@ module sub( m1,m2,q,em, m_R, round);
     always @* begin
         if (em) begin //Para no hacer el swap
             resta = shifted_m1b - shifted_m2b; 
-        end else begin // Cuando la otra mantisa es mas grandecita
-            resta = shifted_m2b - shifted_m1b;
+        end else begin 
+            if (ee)
+                resta = shifted_m1b - shifted_m2b;
+            else // Cuando la otra mantisa es mas grandecita
+                resta = shifted_m2b - shifted_m1b;
+            
+            
 
         end
     end
+    
+    //Logica para el shifteo o normalizacion: 
+    reg [7:0]toshift;
+    //AQUI toshit debe tener el valor del cuanto es necesario 
+    //el dhifteo en resta para llegar a 1, por ejemplo si es
+    //0001, to shift debe ser 0000011
+   integer i;
+   reg found_one;
+    
+    always @* begin
+        toshift = 0;
+        found_one = 0;
+        for (i = 31; i >= 0; i = i - 1) begin
+            if (!found_one && resta[i] == 1'b1) begin
+                toshift = 31 - i;
+                found_one = 1;
+            end
+        end
+    end
+    //Hasta aqui ya tenemos toshift
+    
     //assign m_R[24] = 1'b0;  //Aqui le doy 25 bits para no ajsutar la logica de los condicionales [0] no hay overflow virtual
-    assign m_R[24:0] = resta[31:7]; //Aqui le doy 25 bits para no ajsutar la logica de los condicionales
+    assign m_R[24:0] = {resta[31:7]<<toshift}; //Aqui le doy 25 bits para no ajsutar la logica de los condicionales
     //Necesito logica para el redondeo por eso
     assign round = resta[5]; //Si el 5 bit es 1 se redondea: 
     
+    //Calculo del nuevo exponente: 
+    assign exp_R = em?(e1 - toshift) : (e2 - toshift);
+    
+
+   
+        
     
 endmodule
