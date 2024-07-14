@@ -87,7 +87,18 @@ module sub( m1,m2,q,em, ee, e1,e2, m_R, round, exp_R);
     assign round = resta[5]; //Si el 5 bit es 1 se redondea: 
     
     //Calculo del nuevo exponente: 
-    assign exp_R = em?(e1 - toshift) : (e2 - toshift);
+    reg [7:0] exp_R_reg;
+
+    always @* begin
+        if (m_R[24:0] == 25'b0 && toshift == 8'b0) begin
+            exp_R_reg = 8'b0; // Si m_R es todo 0 y toshift es todo 0, exp_R se establece en 0.
+        end else begin
+            exp_R_reg = em ? (e1 - toshift) : (e2 - toshift);
+        end
+    end
+
+    assign exp_R = exp_R_reg;
+    
     
 
    
