@@ -1,8 +1,5 @@
 `timescale 1ns / 1ps
 module sub( m1,m2,q,em, ee, e1,e2, m_R, round, exp_R);
-    
-    
-    
     input [22:0]m1;//mantisa sin bit implicito
     input [22:0]m2; //mantisa sin bit implicito
     
@@ -16,22 +13,22 @@ module sub( m1,m2,q,em, ee, e1,e2, m_R, round, exp_R);
     output round;
     
     //Añado el bit implicito
-    wire [31:0]m1b;
-    wire [31:0]m2b;
+    wire [255:0]m1b; //Para mejorar la precision m1b y m2b deberia ser de aprox tamaño 255
+    wire [255:0]m2b;
     
     
     //-------
-    assign m1b[30:8] = m1[22:0];
-    assign m1b[7:0] = 8'b0;
-    assign m2b[7:0] = 8'b0;
-    assign m2b[30:8] = m2[22:0];
-    assign m1b[31]=1'b1;
-    assign m2b[31]=1'b1;
+    assign m1b[254:232] = m1[22:0];
+    assign m1b[231:0] = 232'b0;
+    assign m2b[231:0] = 232'b0;
+    assign m2b[254:232] = m2[22:0];
+    assign m1b[255]=1'b1;
+    assign m2b[255]=1'b1;
     //Ya tengo las mantisas bonitas
     
     //Ahora el shifteo: 
-    reg [31:0]shifted_m1b;
-    reg [31:0]shifted_m2b;
+    reg [255:0]shifted_m1b;
+    reg [255:0]shifted_m2b;
     
     always @* begin
         if (em) begin
@@ -45,7 +42,7 @@ module sub( m1,m2,q,em, ee, e1,e2, m_R, round, exp_R);
         end
     end
     //Ahora por fin si puedo restar pipi
-    reg [31:0]resta;
+    reg [255:0]resta;
 
     always @* begin
         if (em) begin //Para no hacer el swap
@@ -55,9 +52,6 @@ module sub( m1,m2,q,em, ee, e1,e2, m_R, round, exp_R);
                 resta = shifted_m1b - shifted_m2b;
             else // Cuando la otra mantisa es mas grandecita
                 resta = shifted_m2b - shifted_m1b;
-            
-            
-
         end
     end
     
@@ -72,9 +66,9 @@ module sub( m1,m2,q,em, ee, e1,e2, m_R, round, exp_R);
     always @* begin
         toshift = 0;
         found_one = 0;
-        for (i = 31; i >= 0; i = i - 1) begin
+        for (i = 255; i >= 0; i = i - 1) begin
             if (!found_one && resta[i] == 1'b1) begin
-                toshift = 31 - i;
+                toshift = 255 - i;
                 found_one = 1;
             end
         end
@@ -82,9 +76,9 @@ module sub( m1,m2,q,em, ee, e1,e2, m_R, round, exp_R);
     //Hasta aqui ya tenemos toshift
     
     //assign m_R[24] = 1'b0;  //Aqui le doy 25 bits para no ajsutar la logica de los condicionales [0] no hay overflow virtual
-    assign m_R[24:0] = {resta[31:7]<<toshift}; //Aqui le doy 25 bits para no ajsutar la logica de los condicionales
+    assign m_R[24:0] = {resta[255:231]<<toshift}; //Aqui le doy 25 bits para no ajsutar la logica de los condicionales
     //Necesito logica para el redondeo por eso
-    assign round = resta[5]; //Si el 5 bit es 1 se redondea: 
+    assign round = resta[229]; //Si el 5 bit es 1 se redondea: 
     
     //Calculo del nuevo exponente: 
     reg [7:0] exp_R_reg;

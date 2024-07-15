@@ -3,20 +3,24 @@ module tb_fadd;
     // Entradas
     reg [31:0] a;
     reg [31:0] b;
+    wire z;
+    wire n;
+    wire c;
+    wire o;
     // Salidas
     wire [31:0] y4;
     wire total_e;
     wire total_3;
-    
-    
     //TESTES RESULTS
     reg [31:0] test;
-
-    
-    faddV tuki (
+    faddV tuki(
         .a(a), 
         .b(b), 
-        .y(y4)
+        .y(y4),
+        .z(z), 
+        .n(n), 
+        .c(c), 
+        .o(o)
     );
     
     equal equaltuki(.a(test), .b(y4), .y(total_e), .y2(total_3));
@@ -83,7 +87,7 @@ module tb_fadd;
         b = 32'b11000001000010101011100001010010; //-8.67
         test= 32'b00000000000000000000000000000000;//0
         #10; 
-                 //10
+        //10
 
          a = 32'b01000001000110101011100001010010; //9.67
         b = 32'b11000001000010101011100001010010; //-8.67

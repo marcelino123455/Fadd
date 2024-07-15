@@ -1,8 +1,9 @@
 `timescale 1ns / 1ps
-module faddV(a,b,y);
+module faddV(a,b,y, z, n, c, o);
     input [31:0] a;
     input [31:0] b;
     output reg [31:0] y;
+    output reg z, n, c, o;
     
     wire s1, s2;
     wire [7:0] e1, e2;
@@ -142,6 +143,23 @@ module faddV(a,b,y);
                 
                
         end
+    end
+    
+    //LOGICA DE FLAGS. 
+    always @* begin
+        // Zero Flag
+        z = (mantisaS == 0);
+
+        // Negative Flag
+        n = (mantisaS[24] == 1);
+
+        // Carry Flag (puede no ser relevante en punto flotante, así que lo dejamos en 0)
+        c = 1'b0;
+
+        // Overflow Flag
+        o = ((mantisaS[24] == 1) && (se == 1) && (mantisaS[23:0] == 24'b01111111111111111111111)) || 
+                 ((mantisaS[24] == 0) && (se == 1) && (mantisaS[23:0] == 24'b10000000000000000000000)) || 
+                 ((mantisaS[24] == 0) && (se == 0) && (mantisaS[23:0] == 24'b01111111111111111111111));
     end
     
 endmodule
